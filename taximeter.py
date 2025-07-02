@@ -2,6 +2,10 @@ import time
 import random
 import os
 from datetime import datetime
+import logging
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_PATH = os.path.join(BASE_DIR, "logs\\taximeter.log")
 
 #Función para confirmar con s o n
 def confirm(question):
@@ -16,7 +20,7 @@ def confirm(question):
       continue
 
 def txt(name, text):
-  with open(name, "a", encoding='utf-8') as f:
+  with open(os.path.join(BASE_DIR, name), "a", encoding='utf-8') as f:
     f.write(text)
 
 def change_price():
@@ -58,7 +62,7 @@ def ask_prices():
   if confirm("¿Quieres cambiar más precios?"):
     ask_prices()
   else:
-    trip()
+    True
 
 def trip():
   global stop_count, moving_count, trip_bool, moving_price, stop_price
@@ -75,33 +79,33 @@ def trip():
   "¡Disfruta del viaje!\n")
   try:
     while trip_bool:
-      inicio = time.perf_counter()
+      start = time.perf_counter()
       km_ph = random.choice([0, 30]) #Lo hice aleatorio para pruebas, pero se puede usar la librería gpsd para detectar movimiento
       if km_ph == 0:
         stop_count += 1
       else:
         moving_count += 1
-      duracion = time.perf_counter() - inicio
-      time.sleep(max(0, 1.0 - duracion))
+      duration = time.perf_counter() - start
+      time.sleep(max(0, 1.0 - duration))
   except KeyboardInterrupt:
-    on_end()
+    on_end(duration)
 
-def on_end():
+def on_end(duration):
   global stop_count, moving_count, trip_bool, moving_price, stop_price
   trip_bool = False
   print("Gracias por usar este sitema.\n" \
   "Calculando el precio de este viaje...")
-  #Al ser while hay que restar 1 al contador por el tipo de bucle
+  #Al ser while hay que restar la ultima duración al contador por el tipo de bucle
   if moving_count > 0:
-    moving_count -= 1
+    moving_count -= 1.0 - duration
   if stop_count > 0:
-    stop_count -= 1
+    stop_count -= 1.0 - duration
   precio_final = ((moving_count * moving_price) + (stop_count * stop_price)) / 100
   print(f"Tienes que pagar {precio_final}€")
 
-  txt(".\\taximeter\\trips.txt", f"Viaje en fecha: {datetime.now()}\n" \
+  txt("trips.txt", f"Viaje terminado en fecha: {datetime.now()}\n" \
       f"Con {stop_price} céntimos por segundo en parada y {moving_price} céntimos por segundo en marcha.\n" \
-      f"Este viaje a durado {moving_count + stop_count} segundos totales y se ha pagado {precio_final} por el mismo\n" \
+      f"Este viaje a durado {moving_count + stop_count} segundos totales y se ha pagado {precio_final}€ por el mismo\n" \
       "Viaje finalizado, gracias\n\n" \
       "-----------------------------------------------------------------------------------------\n\n")
 
@@ -109,6 +113,7 @@ def on_end():
     trip_bool = True
     trip()
   else:
+    print("¡Gracias por usar este sistema! Hasta pronto")
     quit()
 
 if __name__ == "__main__":
@@ -120,11 +125,7 @@ if __name__ == "__main__":
   trip_bool = True
 
   print("Bienvenide al taxímetro digital\n" \
-  "Este sistema te ayuda a calcular el precio de los viajes en taxi\n" \
-  f"\nCalcula \033[93m{stop_price}\033[0m céntimos por segundo en parada y \033[93m{moving_price}\033[0m céntimos por segundo en marcha.\n")
+  "Este sistema te ayuda a calcular el precio de los viajes en taxi")
   #keyboard.add_hotkey('ctrl+q', on_end)
   #keyboard.wait()
-  if confirm("¿Quieres ajustar los precios?"):
-    ask_prices()
-  else:
-    trip()
+  trip()
