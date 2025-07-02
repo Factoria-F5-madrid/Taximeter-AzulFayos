@@ -5,15 +5,13 @@ from datetime import datetime
 import logging
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_PATH = os.path.join(BASE_DIR, "logs\\taximeter.log")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_PATH = os.path.join(LOG_DIR, "taximeter.log")
 
 # Configuración del log
 logging.basicConfig(filename=LOG_PATH, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-'''
-logging.info("Programa iniciado")
-logging.warning("Velocidad nula detectada")
-logging.error("Error al leer entrada del usuario")
-'''
+
 #Cerrar y renombrar el log
 def log_on_end():
   for handler in logging.root.handlers[:]:
