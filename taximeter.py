@@ -4,14 +4,6 @@ import os
 from datetime import datetime
 import logging
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-os.makedirs(LOG_DIR, exist_ok=True)
-LOG_PATH = os.path.join(LOG_DIR, "taximeter.log")
-
-logging.basicConfig(filename=LOG_PATH, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
 class Taximeter:
   def __init__(self, stop_price=2, moving_price=5):
     self.stop_price = stop_price
@@ -19,8 +11,14 @@ class Taximeter:
     self.moving_count = 0
     self.stop_count = 0
     self.trip_active = True
-    logging.info("Taximeter initialized")
+    self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    self.LOG_DIR = os.path.join(self.BASE_DIR, "logs")
+    os.makedirs(self.LOG_DIR, exist_ok=True)
+    self.LOG_PATH = os.path.join(self.LOG_DIR, "taximeter.log")
 
+    logging.basicConfig(filename=self.LOG_PATH, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.info("Taximeter initialized")
+    
   def confirm(self, question):
     while True:
       user_input = input(question + " (s/n): ")
@@ -30,10 +28,6 @@ class Taximeter:
         return False
       else:
         print("Entrada inválida, escriba s/n.")
-
-  def txt_log(self, name, text):
-    with open(os.path.join(BASE_DIR, name), "a", encoding='utf-8') as f:
-      f.write(text)
 
   def change_price(self):
     while True:
@@ -90,10 +84,10 @@ class Taximeter:
       logging.root.removeHandler(handler)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    new_log_path = os.path.join(LOG_DIR, f"{timestamp}.log")
+    new_log_path = os.path.join(self.LOG_DIR, f"{timestamp}.log")
 
     try:
-      os.rename(LOG_PATH, new_log_path)
+      os.rename(self.LOG_PATH, new_log_path)
       print(f"Log renombrado correctamente a: {new_log_path}")
     except Exception as e:
       print(f"Error al renombrar el log: {e}")
@@ -114,10 +108,11 @@ class Taximeter:
 
     print(f"Tienes que pagar {total}€")
 
-    self.txt_log("trips.txt", f"Viaje terminado en: {datetime.now()}\n" \
-    f"Parada: {self.stop_price} c/s, Marcha: {self.moving_price} c/s\n" \
-    f"Duración: {self.moving_count + self.stop_count} s - Total: {total}€\n\n" \
-    "------------------------------------------------------------\n")
+    with open(os.path.join(self.BASE_DIR, "txt_log.txt"), "a", encoding='utf-8') as f:
+      f.write(f"Viaje terminado en: {datetime.now()}\n" \
+      f"Parada: {self.stop_price} cents/s, Marcha: {self.moving_price} cents/s\n" \
+      f"Duración: {self.moving_count + self.stop_count} s - Total: {total}€\n\n" \
+      "------------------------------------------------------------\n")
 
     if self.confirm("¿Quieres iniciar otro trayecto?"):
       logging.info("Another trip started")
