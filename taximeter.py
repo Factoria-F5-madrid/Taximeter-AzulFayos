@@ -12,12 +12,21 @@ class Taximeter:
     self.stop_count = 0
     self.trip_active = True
     self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    self.DATA = os.path.join(self.BASE_DIR, "data")
+    os.makedirs(self.DATA, exist_ok=True)
     self.LOG_DIR = os.path.join(self.BASE_DIR, "logs")
     os.makedirs(self.LOG_DIR, exist_ok=True)
     self.LOG_PATH = os.path.join(self.LOG_DIR, "taximeter.log")
 
-    logging.basicConfig(filename=self.LOG_PATH, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logging.info("Taximeter initialized")
+    self.logger = logging.getLogger("taximeter")
+    self.logger.setLevel(logging.INFO)
+
+    # Evita añadir múltiples handlers si ya existen
+    if not self.logger.handlers:
+      handler = logging.FileHandler(self.LOG_PATH, encoding='utf-8')
+      formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+      handler.setFormatter(formatter)
+      self.logger.addHandler(handler)
     
   def confirm(self, question):
     while True:
@@ -35,7 +44,7 @@ class Taximeter:
         valor = int(input("Ingresa el valor en \033[93mcéntimos\033[0m: "))
         if valor <= 0:
           print("El valor debe ser mayor que 0.")
-          logging.info("Invalid price")
+          self.logger.info("Invalid price")
           continue
         return valor
       except ValueError:
@@ -44,44 +53,45 @@ class Taximeter:
   def ask_prices(self):
     try:
       while True:
-        logging.info("Options to change price")
+        self.logger.info("Options to change price")
         print("\n1) Precio en parado")
         print("2) Precio en marcha")
         print("0) Cancelar cambio")
         option = input("Elige una opción (1, 2 o 0): ")
         if option == "1":
-          logging.info("Stoped price selected")
+          self.logger.info("Stoped price selected")
           self.stop_price = self.change_price()
           print(f"Precio en parada cambiado a: {self.stop_price}")
-          logging.info(f"Stop price changed to {self.stop_price}")
+          self.logger.info(f"Stop price changed to {self.stop_price}")
           break
         elif option == "2":
-          logging.info("Moving price selected")
+          self.logger.info("Moving price selected")
           self.moving_price = self.change_price()
           print(f"Precio en marcha cambiado a: {self.moving_price}")
-          logging.info(f"Moving price changed to {self.moving_price}")
+          self.logger.info(f"Moving price changed to {self.moving_price}")
           break
         elif option == "0":
-          logging.info("Cancelled price change")
+          self.logger.info("Cancelled price change")
           return
         else:
-          logging.info("Invalid selection")
+          self.logger.info("Invalid selection")
           print("Entrada inválida, escribe 1, 2 o 0.")
 
       if self.confirm("¿Quieres cambiar más precios?"):
-        logging.info("Changing more prices")
+        self.logger.info("Changing more prices")
         self.ask_prices()
       else:
-        logging.info("Go to trip")
+        self.logger.info("Go to trip")
     except Exception as e:
-      logging.error(f"Error al cambiar precios: {e}")
+      self.logger.error(f"Error al cambiar precios: {e}")
       self.log_on_end()
       quit()
 
   def log_on_end(self):
-    for handler in logging.root.handlers[:]:
+    handlers = self.logger.handlers[:]
+    for handler in handlers:
       handler.close()
-      logging.root.removeHandler(handler)
+      self.logger.removeHandler(handler)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     new_log_path = os.path.join(self.LOG_DIR, f"{timestamp}.log")
@@ -100,27 +110,27 @@ class Taximeter:
       self.moving_count -= subtrac
     if self.stop_count > 0:
       self.stop_count -= subtrac
-    logging.info("Subtracted leftover time")
+    self.logger.info("Subtracted leftover time")
 
     total = ((self.moving_count * self.moving_price) + (self.stop_count * self.stop_price)) / 100
     total = round(total, 2)
-    logging.info(f"Total trip price in euros: {total}")
+    self.logger.info(f"Total trip price in euros: {total}")
 
     print(f"Tienes que pagar {total}€")
 
-    with open(os.path.join(self.BASE_DIR, "txt_log.txt"), "a", encoding='utf-8') as f:
+    with open(os.path.join(self.DATA, "txt_log.txt"), "a", encoding='utf-8') as f:
       f.write(f"Viaje terminado en: {datetime.now()}\n" \
       f"Parada: {self.stop_price} cents/s, Marcha: {self.moving_price} cents/s\n" \
       f"Duración: {self.moving_count + self.stop_count} s - Total: {total}€\n\n" \
       "------------------------------------------------------------\n")
 
     if self.confirm("¿Quieres iniciar otro trayecto?"):
-      logging.info("Another trip started")
+      self.logger.info("Another trip started")
       self.trip_active = True
       self.start_trip()
     else:
       print("¡Gracias por usar este sistema! Hasta pronto.")
-      logging.info("Program finished")
+      self.logger.info("Program finished")
       self.log_on_end()
       quit()
 
@@ -128,16 +138,16 @@ class Taximeter:
     try:
       print(f"\nCalcula \033[93m{self.stop_price}\033[0m céntimos por segundo en parada y \033[93m{self.moving_price}\033[0m en marcha.")
       if not self.confirm("¿Quieres continuar con estos precios?"):
-        logging.info("Go to prices change")
+        self.logger.info("Go to prices change")
         self.ask_prices()
       else:
-        logging.info("Confirmed prices")
+        self.logger.info("Confirmed prices")
 
       #Reiniciar variables por si se inicia otro viaje
       self.moving_count = 0
       self.stop_count = 0
-      logging.info("Reset count variables")
-      logging.info("Trip started")
+      self.logger.info("Reset count variables")
+      self.logger.info("Trip started")
       print("\nViaje iniciado\nPresiona \033[93m'Ctrl+C'\033[0m para \033[93mterminar\033[0m el viaje\n¡Buen viaje!\n")
 
       while self.trip_active:
@@ -146,26 +156,25 @@ class Taximeter:
           km_ph = random.choice([0, 30]) #Lo hice aleatorio para pruebas, pero se puede usar la librería gpsd para detectar movimiento
           if km_ph == 0:
             self.stop_count += 1
-            logging.info(f"Stopped time: {self.stop_count}")
+            self.logger.info(f"Stopped time: {self.stop_count}")
           else:
             self.moving_count += 1
-            logging.info(f"Moving time: {self.moving_count}")
-          logging.info("Calculated exact time to wait")
+            self.logger.info(f"Moving time: {self.moving_count}")
+          self.logger.info("Calculated exact time to wait")
           duration = time.perf_counter() - start
           subtrac = 1.0 - duration
           time.sleep(max(0, subtrac))
         except KeyboardInterrupt:
-          logging.info("Trip finished")
+          self.logger.info("Trip finished")
           self.on_end(subtrac)
     except Exception as e:
-      logging.error(f"Error during trip: {e}")
-      logging.error("Contact with your system administrator")
+      self.logger.error(f"Error during trip: {e}")
+      self.logger.error("Contact with your system administrator")
       self.log_on_end()
       quit()
 
 
 if __name__ == "__main__":
-  logging.info("Program started")
   print("Bienvenide al taxímetro digital\n" \
   "Este sistema te ayuda a calcular el precio de los viajes en taxi")
   taximeter = Taximeter()

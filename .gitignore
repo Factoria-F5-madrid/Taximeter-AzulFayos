@@ -1,0 +1,8 @@
+*_old.py
+__pycache__/
+*.pyc
+*.pyo
+logs/*
+data/*
+.env
+.venv

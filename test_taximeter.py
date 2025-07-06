@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, mock_open
 from taximeter import Taximeter
+import os
 
 class TestTaximeter(unittest.TestCase):
 
@@ -50,7 +51,7 @@ class TestTaximeter(unittest.TestCase):
     with self.assertRaises(SystemExit):
       self.taxi.on_end(subtrac=1)
 
-    mock_file.assert_called_with(self.taxi.BASE_DIR + "\\txt_log.txt", "a", encoding='utf-8')
+    mock_file.assert_called_with(os.path.join(self.taxi.DATA, "txt_log.txt"), "a", encoding='utf-8')
     
     total = ((self.taxi.moving_count * self.taxi.moving_price) + (self.taxi.stop_count * self.taxi.stop_price)) / 100
     total = round(total, 2)

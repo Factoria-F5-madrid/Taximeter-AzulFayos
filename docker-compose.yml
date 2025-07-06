@@ -1,0 +1,10 @@
+services:
+  taximeter:
+    build: .
+    container_name: taximeter_app
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    command: ["python", "taximeter.py"]
