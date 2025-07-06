@@ -2,7 +2,9 @@
 __pycache__/
 *.pyc
 *.pyo
-logs/*
-data/*
 .env
 .venv
+logs/*
+!logs/.gitkeep
+data/*
+!data/.gitkeep
