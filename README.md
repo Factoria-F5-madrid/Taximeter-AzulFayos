@@ -6,6 +6,9 @@ Calcula el precio de un viaje en función del tiempo detenido y en movimiento, r
 
 Además posee test unitarios para pruebas de las funciones.
 
+(Anotación de Alexandra)
+El proyecto está orientado a montarlo en raspberry para poder tenerlo en un taxi y calcular el movimiento con la librería gspd de python
+
 
 ## 💾 Descargar proyecto
 Elegir carpeta y ejecutar en el terminal:
